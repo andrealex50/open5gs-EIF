@@ -1367,6 +1367,13 @@ libsbi_openapi_sources = files('''
     model/wlan_performance_req.c
     model/wlan_per_ss_id_performance_info.c
     model/wlan_per_ts_performance_info.c
+    model/energy_ee_event.c
+    model/energy_ee_notif.c
+    model/energy_ee_report.c
+    model/energy_ee_subsc.c
+    model/energy_ee_subsc_patch.c
+    model/energy_ee_subsc_set.c
+    model/energy_info.c
 '''.split())
 
 libsbi_openapi_inc = include_directories('.')

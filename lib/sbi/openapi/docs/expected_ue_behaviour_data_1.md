@@ -1,0 +1,18 @@
+# expected_ue_behaviour_data_1_t
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**stationary_indication** | **stationary_indication_t \*** |  | [optional] 
+**communication_duration_time** | **int** | indicating a time in seconds. | [optional] 
+**periodic_time** | **int** | indicating a time in seconds. | [optional] 
+**scheduled_communication_time** | [**scheduled_communication_time_1_t**](scheduled_communication_time_1.md) \* |  | [optional] 
+**scheduled_communication_type** | **scheduled_communication_type_t \*** |  | [optional] 
+**expected_umts** | [**list_t**](location_area_1.md) \* | Identifies the UE&#39;s expected geographical movement. The attribute is only applicable in 5G. | [optional] 
+**traffic_profile** | **traffic_profile_t \*** |  | [optional] 
+**battery_indication** | [**battery_indication_t**](battery_indication.md) \* |  | [optional] 
+**validity_time** | **char \*** | string with format &#39;date-time&#39; as defined in OpenAPI. | [optional] 
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

@@ -1478,6 +1478,7 @@ components:
             - UPF
             - N3IWF
             - AF
+            - EIF
             - UDSF
             - BSF
             - CHF

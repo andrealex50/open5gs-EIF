@@ -102,6 +102,15 @@
 #include "model/status_notification.h"
 #include "model/provisioned_data_sets.h"
 
+#include "openapi/model/energy_ee_event_any_of.h"
+#include "openapi/model/energy_ee_event.h"
+#include "openapi/model/energy_ee_notif.h"
+#include "openapi/model/energy_ee_report.h"
+#include "openapi/model/energy_ee_subsc.h"
+#include "openapi/model/energy_ee_subsc_patch.h"
+#include "openapi/model/energy_ee_subsc_set.h"
+#include "openapi/model/energy_info.h"
+
 #include "custom/links.h"
 
 #if defined(__GNUC__)

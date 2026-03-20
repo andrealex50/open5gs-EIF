@@ -612,6 +612,9 @@ typedef struct ogs_sbi_message_s {
     OpenAPI_ue_context_transfer_rsp_data_t *UeContextTransferRspData;
     OpenAPI_ue_reg_status_update_req_data_t *UeRegStatusUpdateReqData;
     OpenAPI_ue_reg_status_update_rsp_data_t *UeRegStatusUpdateRspData;
+    OpenAPI_energy_ee_subsc_t *EnergyEeSubsc;
+    OpenAPI_energy_ee_subsc_patch_t *EnergyEeSubscPatch;
+    OpenAPI_energy_ee_notif_t *EnergyEeNotif;
 
     ogs_sbi_links_t *links;
 

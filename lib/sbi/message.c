@@ -231,6 +231,12 @@ void ogs_sbi_message_free(ogs_sbi_message_t *message)
         OpenAPI_ue_reg_status_update_req_data_free(message->UeRegStatusUpdateReqData);
     if (message->UeRegStatusUpdateRspData)
         OpenAPI_ue_reg_status_update_rsp_data_free(message->UeRegStatusUpdateRspData);
+    if (message->EnergyEeSubsc)
+        OpenAPI_energy_ee_subsc_free(message->EnergyEeSubsc);
+    if (message->EnergyEeSubscPatch)
+        OpenAPI_energy_ee_subsc_patch_free(message->EnergyEeSubscPatch);
+    if (message->EnergyEeNotif)
+        OpenAPI_energy_ee_notif_free(message->EnergyEeNotif);
     if (message->links) {
         OpenAPI_clear_and_free_string_list(message->links->items);
         if (message->links->self)
@@ -2911,6 +2917,59 @@ static int parse_json(ogs_sbi_message_t *message,
                 rv = OGS_ERROR;
                 ogs_error("Unknown resource name [%s]",
                         message->h.resource.component[0]);
+            END
+            break;
+
+        CASE(OGS_SBI_SERVICE_NAME_NEIF_EVENTEXPOSURE)
+            SWITCH(message->h.resource.component[0])
+            CASE(OGS_SBI_RESOURCE_NAME_SUBSCRIPTIONS) 
+                if (message->h.resource.component[1]) {
+                    SWITCH(message->h.method)
+                    CASE(OGS_SBI_HTTP_METHOD_GET)
+                    CASE(OGS_SBI_HTTP_METHOD_PUT)
+                        if (message->res_status == 0 || message->res_status == OGS_SBI_HTTP_STATUS_OK) {
+                            message->EnergyEeSubsc = OpenAPI_energy_ee_subsc_parseFromJSON(item);
+                            if (!message->EnergyEeSubsc) {
+                                rv = OGS_ERROR;
+                                ogs_error("JSON parse error");
+                            }
+                        }
+                        break;
+                    CASE(OGS_SBI_HTTP_METHOD_PATCH)
+                        if (message->res_status == 0 || message->res_status == OGS_SBI_HTTP_STATUS_OK) {
+                            message->EnergyEeSubscPatch = OpenAPI_energy_ee_subsc_patch_parseFromJSON(item);
+                            if (!message->EnergyEeSubscPatch) {
+                                rv = OGS_ERROR;
+                                ogs_error("JSON parse error");
+                            }
+                        }
+                        break;
+                    CASE(OGS_SBI_HTTP_METHOD_DELETE)
+                        break;
+                    DEFAULT
+                        rv = OGS_ERROR;
+                        ogs_error("Unknown method [%s]", message->h.method);
+                    END
+                } else { 
+                    SWITCH(message->h.method)
+                    CASE(OGS_SBI_HTTP_METHOD_POST)
+                        if (message->res_status == 0 || message->res_status == OGS_SBI_HTTP_STATUS_CREATED) {
+                            message->EnergyEeSubsc = OpenAPI_energy_ee_subsc_parseFromJSON(item);
+                            if (!message->EnergyEeSubsc) {
+                                rv = OGS_ERROR;
+                                ogs_error("JSON parse error");
+                            }
+                        }
+                        break;
+                    DEFAULT
+                        rv = OGS_ERROR;
+                        ogs_error("Unknown method [%s]", message->h.method);
+                    END
+                }
+                break;
+            DEFAULT
+                rv = OGS_ERROR;
+                ogs_error("Unknown resource name [%s]", message->h.resource.component[0]);
             END
             break;
 

@@ -1,0 +1,12 @@
+# w_agf_info_t
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**ipv4_endpoint_addresses** | **list_t \*** |  | [optional] 
+**ipv6_endpoint_addresses** | **list_t \*** |  | [optional] 
+**endpoint_fqdn** | **char \*** | Fully Qualified Domain Name | [optional] 
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

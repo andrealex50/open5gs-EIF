@@ -1,0 +1,12 @@
+# qos_monitoring_information_rm_t
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**rep_thresh_dl** | **int** |  | [optional] 
+**rep_thresh_ul** | **int** |  | [optional] 
+**rep_thresh_rp** | **int** |  | [optional] 
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

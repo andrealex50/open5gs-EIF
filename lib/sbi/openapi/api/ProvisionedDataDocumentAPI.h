@@ -1,0 +1,21 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include "../include/apiClient.h"
+#include "../include/list.h"
+#include "../external/cJSON.h"
+#include "../include/keyValuePair.h"
+#include "../include/binary.h"
+#include "../model/data_set_name.h"
+#include "../model/provisioned_data_sets.h"
+#include "../model/set.h"
+
+// Enum DATASETNAMES for ProvisionedDataDocumentAPI_queryProvisionedData
+typedef enum  { nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_NULL = 0, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_AM, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_SMF_SEL, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_SMS_SUB, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_SM, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_TRACE, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_SMS_MNG, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_LCS_PRIVACY, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_LCS_MO, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_LCS_BCA, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_V2X, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_PROSE, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_ODB, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_EE_PROF, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_PP_PROF, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_NIDD_AUTH, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_USER_CONSENT, nudr_datarepository_api_openapi_file_queryProvisionedData_DATASETNAMES_MBS } nudr_datarepository_api_openapi_file_queryProvisionedData_dataset-names_e;
+
+
+// Retrieve multiple provisioned data sets of a UE
+//
+provisioned_data_sets_t*
+ProvisionedDataDocumentAPI_queryProvisionedData(apiClient_t *apiClient, char * ueId , char * servingPlmnId , set_t * dataset_names );
+
+

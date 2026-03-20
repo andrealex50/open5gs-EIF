@@ -1,0 +1,11 @@
+# wireline_service_area_restriction_1_t
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**restriction_type** | **restriction_type_t \*** |  | [optional] 
+**areas** | [**list_t**](wireline_area_1.md) \* |  | [optional] 
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+
