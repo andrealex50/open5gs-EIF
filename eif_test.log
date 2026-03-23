@@ -1,14 +1,2 @@
-Open5GS daemon v2.7.6-183-g209a0cd+
-
-[32m03/11 16:31:47.342[0m: [[33mapp[0m] [1;32mINFO[0m: Configuration: './install/etc/open5gs/eif.yaml' (../lib/app/ogs-init.c:144)
-[32m03/11 16:31:47.342[0m: [[33mapp[0m] [1;32mINFO[0m: File Logging: '/home/andrealex/open5gs/install/var/log/open5gs/eif.log' (../lib/app/ogs-init.c:147)
-[32m03/11 16:31:47.346[0m: [[33msbi[0m] [1;32mINFO[0m: Setup NF EndPoint(addr) [127.0.0.10:7777] (../lib/sbi/context.c:451)
-[32m03/11 16:31:47.346[0m: [[33msbi[0m] [1;32mINFO[0m: NF Service [neif-ee] (../lib/sbi/context.c:1985)
-[32m03/11 16:31:47.349[0m: [[33msbi[0m] [1;32mINFO[0m: nghttp2_server() [http://127.0.0.120]:7777 (../lib/sbi/nghttp2-server.c:439)
-[32m03/11 16:31:47.349[0m: [[33meif[0m] [1;32mINFO[0m: EIF initialize...done (../src/eif/app.c:32)
-[32m03/11 16:31:47.350[0m: [[33msbi[0m] [1;36mWARNING[0m: Couldn't connect to server (7): Failed to connect to 127.0.0.10 port 7777 after 0 ms: Couldn't connect to server (../lib/sbi/client.c:767)
-[32m03/11 16:31:47.350[0m: [[33msbi[0m] [1;36mWARNING[0m: ogs_sbi_client_handler() failed [-1] (../lib/sbi/path.c:62)
-[32m03/11 16:31:49.347[0m: [[33msbi[0m] [1;33mERROR[0m: nghttp2_session_mem_recv() failed (-903:Received bad client magic byte string) (../lib/sbi/nghttp2-server.c:1013)
-[32m03/11 16:31:49.360[0m: [[33msbi[0m] [1;33mERROR[0m: nghttp2_session_mem_recv() failed (-903:Received bad client magic byte string) (../lib/sbi/nghttp2-server.c:1013)
-[32m03/11 16:31:49.372[0m: [[33msbi[0m] [1;33mERROR[0m: nghttp2_session_mem_recv() failed (-903:Received bad client magic byte string) (../lib/sbi/nghttp2-server.c:1013)
-[32m03/11 16:31:49.385[0m: [[33msbi[0m] [1;33mERROR[0m: nghttp2_session_mem_recv() failed (-903:Received bad client magic byte string) (../lib/sbi/nghttp2-server.c:1013)
+[32m03/23 15:28:39.511[0m: [[33mapp[0m] [1;31mFATAL[0m: cannot open log file : /var/local/log/open5gs/eif.log (../lib/app/ogs-init.c:105)
+[32m03/23 15:28:39.511[0m: [[33mapp[0m] [1;31mFATAL[0m: Open5GS initialization failed. Aborted (../src/main.c:215)

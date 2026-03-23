@@ -283,16 +283,34 @@ void eif_timer_notify_handler(eif_event_t *e)
         message.h.uri = sess->energy_ee_subsc->notif_uri;
 
         OpenAPI_energy_ee_notif_t notif;
-        OpenAPI_energy_ee_report_t report;
-
         memset(&notif, 0, sizeof(notif));
-        memset(&report, 0, sizeof(report));
 
-        report.event = OpenAPI_energy_ee_event_UE_ENERGY;
         OpenAPI_list_t *list = OpenAPI_list_create();
-        OpenAPI_list_add(list, &report);
         notif.reports = list;
+        notif.sub_id = sess->sub_id;
         message.EnergyEeNotif = &notif;
+
+        if (sess->energy_ee_subsc->events_subsc_sets) {
+            OpenAPI_lnode_t *node;
+            OpenAPI_list_for_each(sess->energy_ee_subsc->events_subsc_sets, node) {
+                OpenAPI_map_t *map = (OpenAPI_map_t *)node->data;
+                if (!map || !map->value) continue;
+
+                OpenAPI_energy_ee_subsc_set_t *subsc_set =
+                    (OpenAPI_energy_ee_subsc_set_t *)map->value;
+
+                OpenAPI_energy_ee_report_t *report = ogs_calloc(1, sizeof(*report));
+                report->subsc_set_id = ogs_strdup(map->key);
+                report->event = subsc_set->event;
+                report->time_stamp = ogs_sbi_localtime_string(ogs_time_now());
+
+                OpenAPI_energy_info_t *energy_info = ogs_calloc(1, sizeof(*energy_info));
+                energy_info->energy_consumption = (int)(ogs_time_now() % 1000) + 100; /* Simulated */
+                report->energy_info = energy_info;
+
+                OpenAPI_list_add(list, report);
+            }
+        }
 
         request = ogs_sbi_build_request(&message);
         if (request) {
@@ -317,7 +335,19 @@ void eif_timer_notify_handler(eif_event_t *e)
         } else {
             ogs_error("Failed to build request for %s", sess->energy_ee_subsc->notif_uri);
         }
-        OpenAPI_list_free(list);
+        if (list) {
+            OpenAPI_lnode_t *free_node;
+            OpenAPI_list_for_each(list, free_node) {
+                OpenAPI_energy_ee_report_t *report = (OpenAPI_energy_ee_report_t *)free_node->data;
+                if (report) {
+                    if (report->subsc_set_id) ogs_free(report->subsc_set_id);
+                    if (report->time_stamp) ogs_free(report->time_stamp);
+                    if (report->energy_info) ogs_free(report->energy_info);
+                    ogs_free(report);
+                }
+            }
+            OpenAPI_list_free(list);
+        }
     }
     ogs_timer_start(eif_self()->notify_timer, ogs_time_from_sec(5));
 }
