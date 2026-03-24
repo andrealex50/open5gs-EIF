@@ -207,6 +207,10 @@ void eif_state_operational(ogs_fsm_t *s, eif_event_t *e)
             ogs_error("cannot parse HTTP response");
             ogs_sbi_message_free(&message);
             ogs_sbi_response_free(response);
+            if (e->h.sbi.request) {
+                ogs_sbi_request_free(e->h.sbi.request);
+                e->h.sbi.request = NULL;
+            }
             break;
         }
 
@@ -351,6 +355,10 @@ void eif_state_operational(ogs_fsm_t *s, eif_event_t *e)
 
         ogs_sbi_message_free(&message);
         ogs_sbi_response_free(response);
+        if (e->h.sbi.request) {
+            ogs_sbi_request_free(e->h.sbi.request);
+            e->h.sbi.request = NULL;
+        }
         break;
 
     case EIF_EVENT_TIMER_NOTIFY:

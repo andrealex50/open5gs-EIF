@@ -1730,6 +1730,18 @@ static char *build_json(ogs_sbi_message_t *message)
         item = OpenAPI_ue_reg_status_update_rsp_data_convertToJSON(
                 message->UeRegStatusUpdateRspData);
         ogs_assert(item);
+    } else if (message->EnergyEeSubsc) {
+        item = OpenAPI_energy_ee_subsc_convertToJSON(
+                message->EnergyEeSubsc);
+        ogs_assert(item);
+    } else if (message->EnergyEeSubscPatch) {
+        item = OpenAPI_energy_ee_subsc_patch_convertToJSON(
+                message->EnergyEeSubscPatch);
+        ogs_assert(item);
+    } else if (message->EnergyEeNotif) {
+        item = OpenAPI_energy_ee_notif_convertToJSON(
+                message->EnergyEeNotif);
+        ogs_assert(item);
     }
 
     if (item) {

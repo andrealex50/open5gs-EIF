@@ -281,6 +281,7 @@ void eif_timer_notify_handler(eif_event_t *e)
         memset(&message, 0, sizeof(message));
         message.h.method = (char *)OGS_SBI_HTTP_METHOD_POST;
         message.h.uri = sess->energy_ee_subsc->notif_uri;
+        message.h.service.name = (char *)OGS_SBI_SERVICE_NAME_NEIF_EVENTEXPOSURE;
 
         OpenAPI_energy_ee_notif_t notif;
         memset(&notif, 0, sizeof(notif));

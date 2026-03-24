@@ -55,6 +55,12 @@ void eif_context_init(void)
 void eif_context_final(void)
 {
     ogs_assert(context_initialized == 1);
+    
+    if (self.notify_timer) {
+        ogs_timer_delete(self.notify_timer);
+        self.notify_timer = NULL;
+    }
+
     eif_sess_remove_all();
     ogs_pool_final(&eif_sess_pool);
     context_initialized = 0;
