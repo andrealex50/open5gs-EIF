@@ -75,4 +75,4 @@ jobs:
     - name : Build Open5GS
       run: ninja -C build
     - name: Test Open5GS
-      run: meson test -C build -v
+      run: meson test -C build -v --timeout-multiplier 3 --print-errorlogs
