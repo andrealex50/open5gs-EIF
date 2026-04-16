@@ -1,0 +1,3 @@
+usr/bin/open5gs-eifd
+configs/open5gs/eif.yaml etc/open5gs
+configs/systemd/open5gs-eifd.service lib/systemd/system

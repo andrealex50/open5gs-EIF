@@ -24,9 +24,14 @@ Docker running example
   
   `$ ./check.sh`
 
-* Runtime
+* Runtime (NRF + EIF)
 
   `$ docker compose run run`
+
+  If you already had a persistent `config` volume from an older image,
+  refresh it once so `/etc/open5gs/eif.yaml` is present:
+
+  `$ docker compose down -v`
 
 For OpenSUSE Build Service Release
 ===========================================

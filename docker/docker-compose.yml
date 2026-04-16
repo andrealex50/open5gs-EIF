@@ -60,7 +60,7 @@ services:
     volumes:
       - config:/etc/open5gs
     hostname: open5gs-run
-#    command: /bin/bash -c "/root/setup.sh; /usr/bin/open5gs-pcrfd -D; /usr/bin/open5gs-pgwd -D; /usr/bin/open5gs-sgwd -D; /usr/bin/open5gs-hssd -D; /usr/bin/open5gs-mmed"
+    command: /bin/bash -c "/root/run.sh"
 
   test:
     image: ${USER}/${DIST-ubuntu}-${TAG-latest}-open5gs-build
