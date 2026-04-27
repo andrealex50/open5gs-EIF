@@ -155,7 +155,7 @@ static bool eif_energy_collector_parse_body(const char *body, double *energy)
     if (energy_info)
         energy_item = cJSON_GetObjectItemCaseSensitive(energy_info, "energy");
 
-    if (!cJSON_IsNumber(energy_item)) {
+    if (!cJSON_IsNumber(energy_item) || energy_item->valuedouble < 0) {
         cJSON_Delete(root);
         return false;
     }
@@ -636,6 +636,16 @@ void eif_timer_notify_handler(eif_event_t *e)
                     energy_info->energy_consumption = collector_energy;
                     energy_info->energy_report_time_stamp = ogs_strdup(end);
                     report->energy_info = energy_info;
+                } else {
+                    ogs_warn("EIF notify report skipped: no valid energyInfo.energy for notifUri [%s] subId [%s] event [%s] supi [%s]",
+                            sess->energy_ee_subsc->notif_uri,
+                            sess->sub_id,
+                            OpenAPI_energy_ee_event_ToString(subsc_set->event),
+                            subsc_set->supi ? subsc_set->supi : "");
+                    OpenAPI_energy_ee_report_free(report);
+                    ogs_free(start);
+                    ogs_free(end);
+                    continue;
                 }
 
                 ogs_info("EIF notify report: notifUri [%s] subId [%s] event [%s] supi [%s] energyInfo.energy [%f]",
@@ -653,16 +663,23 @@ void eif_timer_notify_handler(eif_event_t *e)
             }
         }
 
-        request = ogs_sbi_build_request(&message);
-        if (request) {
+        if (!list || list->count == 0) {
+            ogs_warn("EIF notify skipped: no reports with valid energyInfo.energy for notifUri [%s] subId [%s]",
+                    sess->energy_ee_subsc->notif_uri, sess->sub_id);
+        } else if ((request = ogs_sbi_build_request(&message))) {
             ogs_info("EIF notify target notifUri [%s] subId [%s]",
                     sess->energy_ee_subsc->notif_uri, sess->sub_id);
             if (request->http.content) {
-                ogs_info("EIF notify body JSON: %s", request->http.content);
+                ogs_debug("EIF notify body JSON: %s", request->http.content);
                 if (strstr(request->http.content, "energyConsumption"))
                     ogs_error("EIF notify body still contains energyConsumption");
             }
 
+            scheme = OpenAPI_uri_scheme_NULL;
+            fqdn = NULL;
+            fqdn_port = 0;
+            addr = NULL;
+            addr6 = NULL;
             rc = ogs_sbi_getaddr_from_uri(&scheme, &fqdn, &fqdn_port, &addr, &addr6, sess->energy_ee_subsc->notif_uri);
             if (rc == true && scheme != OpenAPI_uri_scheme_NULL) {
                 client = ogs_sbi_client_find(scheme, fqdn, fqdn_port, addr, addr6);
@@ -671,8 +688,11 @@ void eif_timer_notify_handler(eif_event_t *e)
                 }
             }
             ogs_free(fqdn);
+            fqdn = NULL;
             ogs_freeaddrinfo(addr);
+            addr = NULL;
             ogs_freeaddrinfo(addr6);
+            addr6 = NULL;
 
             if (client) {
                 if (ogs_sbi_client_send_request(client, notif_client_cb, request, NULL) == true) {

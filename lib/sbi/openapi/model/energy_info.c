@@ -43,6 +43,11 @@ cJSON *OpenAPI_energy_info_convertToJSON(OpenAPI_energy_info_t *energy_info)
     }
 
     item = cJSON_CreateObject();
+    if (!item) {
+        ogs_error("OpenAPI_energy_info_convertToJSON() failed [item]");
+        return NULL;
+    }
+
     if (cJSON_AddNumberToObject(item, "energy", energy_info->energy_consumption) == NULL) {
         ogs_error("OpenAPI_energy_info_convertToJSON() failed [energy_consumption]");
         goto end;
@@ -65,6 +70,11 @@ OpenAPI_energy_info_t *OpenAPI_energy_info_parseFromJSON(cJSON *energy_infoJSON)
     OpenAPI_lnode_t *node = NULL;
     cJSON *energy_consumption = NULL;
     cJSON *energy_report_time_stamp = NULL;
+    if (!energy_infoJSON) {
+        ogs_error("OpenAPI_energy_info_parseFromJSON() failed [EnergyInfo]");
+        goto end;
+    }
+
     energy_consumption = cJSON_GetObjectItemCaseSensitive(energy_infoJSON, "energy");
     if (!energy_consumption)
         energy_consumption = cJSON_GetObjectItemCaseSensitive(energy_infoJSON, "energyConsumption");
@@ -73,6 +83,10 @@ OpenAPI_energy_info_t *OpenAPI_energy_info_parseFromJSON(cJSON *energy_infoJSON)
         goto end;
     }
     if (!cJSON_IsNumber(energy_consumption)) {
+        ogs_error("OpenAPI_energy_info_parseFromJSON() failed [energy_consumption]");
+        goto end;
+    }
+    if (energy_consumption->valuedouble < 0) {
         ogs_error("OpenAPI_energy_info_parseFromJSON() failed [energy_consumption]");
         goto end;
     }
