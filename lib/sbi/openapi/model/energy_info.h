@@ -19,12 +19,12 @@ extern "C" {
 
 typedef struct OpenAPI_energy_info_s OpenAPI_energy_info_t;
 typedef struct OpenAPI_energy_info_s {
-    int energy_consumption;
+    double energy_consumption;
     char *energy_report_time_stamp;
 } OpenAPI_energy_info_t;
 
 OpenAPI_energy_info_t *OpenAPI_energy_info_create(
-    int energy_consumption,
+    double energy_consumption,
     char *energy_report_time_stamp
 );
 void OpenAPI_energy_info_free(OpenAPI_energy_info_t *energy_info);
@@ -37,4 +37,3 @@ OpenAPI_energy_info_t *OpenAPI_energy_info_copy(OpenAPI_energy_info_t *dst, Open
 #endif
 
 #endif /* _OpenAPI_energy_info_H_ */
-

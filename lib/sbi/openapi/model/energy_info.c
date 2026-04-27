@@ -5,7 +5,7 @@
 #include "energy_info.h"
 
 OpenAPI_energy_info_t *OpenAPI_energy_info_create(
-    int energy_consumption,
+    double energy_consumption,
     char *energy_report_time_stamp
 )
 {
@@ -43,7 +43,7 @@ cJSON *OpenAPI_energy_info_convertToJSON(OpenAPI_energy_info_t *energy_info)
     }
 
     item = cJSON_CreateObject();
-    if (cJSON_AddNumberToObject(item, "energyConsumption", energy_info->energy_consumption) == NULL) {
+    if (cJSON_AddNumberToObject(item, "energy", energy_info->energy_consumption) == NULL) {
         ogs_error("OpenAPI_energy_info_convertToJSON() failed [energy_consumption]");
         goto end;
     }
@@ -65,7 +65,9 @@ OpenAPI_energy_info_t *OpenAPI_energy_info_parseFromJSON(cJSON *energy_infoJSON)
     OpenAPI_lnode_t *node = NULL;
     cJSON *energy_consumption = NULL;
     cJSON *energy_report_time_stamp = NULL;
-    energy_consumption = cJSON_GetObjectItemCaseSensitive(energy_infoJSON, "energyConsumption");
+    energy_consumption = cJSON_GetObjectItemCaseSensitive(energy_infoJSON, "energy");
+    if (!energy_consumption)
+        energy_consumption = cJSON_GetObjectItemCaseSensitive(energy_infoJSON, "energyConsumption");
     if (!energy_consumption) {
         ogs_error("OpenAPI_energy_info_parseFromJSON() failed [energy_consumption]");
         goto end;
@@ -127,4 +129,3 @@ OpenAPI_energy_info_t *OpenAPI_energy_info_copy(OpenAPI_energy_info_t *dst, Open
 
     return dst;
 }
-
