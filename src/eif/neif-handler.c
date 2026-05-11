@@ -25,15 +25,81 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
 
-#define EIF_ENERGY_COLLECTOR_HOST "172.22.0.44"
-#define EIF_ENERGY_COLLECTOR_PORT 8088
-#define EIF_ENERGY_COLLECTOR_PATH "/energy/v1/report"
-#define EIF_ENERGY_COLLECTOR_TIMEOUT_SEC 2
+#define EIF_ENERGY_COLLECTOR_DEFAULT_HOST "172.22.0.44"
+#define EIF_ENERGY_COLLECTOR_DEFAULT_PORT 8088
+#define EIF_ENERGY_COLLECTOR_DEFAULT_PATH "/energy/v1/report"
+#define EIF_ENERGY_COLLECTOR_DEFAULT_TIMEOUT_SEC 2
 #define EIF_ENERGY_COLLECTOR_BUFFER_SIZE 8192
+
+static const char *eif_env_string(const char *name, const char *fallback)
+{
+    const char *value = getenv(name);
+
+    if (value && value[0])
+        return value;
+
+    return fallback;
+}
+
+static int eif_env_int(const char *name, int fallback, int min, int max)
+{
+    const char *value = getenv(name);
+    char *end = NULL;
+    long parsed = 0;
+
+    if (!value || !value[0])
+        return fallback;
+
+    parsed = strtol(value, &end, 10);
+    if (!end || *end || parsed < min || parsed > max) {
+        ogs_warn("Invalid %s [%s], using default [%d]",
+                name, value, fallback);
+        return fallback;
+    }
+
+    return (int)parsed;
+}
+
+static const char *eif_energy_collector_host(void)
+{
+    return eif_env_string(
+            "EIF_ENERGY_COLLECTOR_HOST",
+            EIF_ENERGY_COLLECTOR_DEFAULT_HOST);
+}
+
+static int eif_energy_collector_port(void)
+{
+    return eif_env_int(
+            "EIF_ENERGY_COLLECTOR_PORT",
+            EIF_ENERGY_COLLECTOR_DEFAULT_PORT, 1, 65535);
+}
+
+static const char *eif_energy_collector_path_base(void)
+{
+    const char *path = eif_env_string(
+            "EIF_ENERGY_COLLECTOR_PATH",
+            EIF_ENERGY_COLLECTOR_DEFAULT_PATH);
+
+    if (path[0] != '/') {
+        ogs_warn("Invalid EIF_ENERGY_COLLECTOR_PATH [%s], using default [%s]",
+                path, EIF_ENERGY_COLLECTOR_DEFAULT_PATH);
+        return EIF_ENERGY_COLLECTOR_DEFAULT_PATH;
+    }
+
+    return path;
+}
+
+static int eif_energy_collector_timeout_sec(void)
+{
+    return eif_env_int(
+            "EIF_ENERGY_COLLECTOR_TIMEOUT_SEC",
+            EIF_ENERGY_COLLECTOR_DEFAULT_TIMEOUT_SEC, 1, 60);
+}
 
 static bool eif_url_is_unreserved(unsigned char c)
 {
@@ -120,7 +186,8 @@ static char *eif_energy_collector_path(
     end_param = eif_url_encode(end);
 
     path = ogs_msprintf("%s?supi=%s&event=%s&start=%s&end=%s",
-            EIF_ENERGY_COLLECTOR_PATH, supi, event, start_param, end_param);
+            eif_energy_collector_path_base(),
+            supi, event, start_param, end_param);
     ogs_assert(path);
 
     eif_append_query_param(&path, "dnn", subsc_set->dnn);
@@ -189,7 +256,7 @@ static bool eif_energy_collector_connect(
         FD_SET(fd, &write_fds);
 
         memset(&timeout, 0, sizeof(timeout));
-        timeout.tv_sec = EIF_ENERGY_COLLECTOR_TIMEOUT_SEC;
+        timeout.tv_sec = eif_energy_collector_timeout_sec();
 
         rc = select(fd + 1, NULL, &write_fds, NULL, &timeout);
         if (rc <= 0)
@@ -219,6 +286,8 @@ static bool eif_energy_collector_fetch(char *path, double *energy)
     int fd = -1, status = 0;
     ssize_t sent = 0, n = 0;
     size_t total = 0, request_len = 0;
+    const char *collector_host = NULL;
+    int collector_port = 0, timeout_sec = 0;
     struct sockaddr_in addr;
     struct timeval timeout;
     char *request = NULL;
@@ -228,6 +297,10 @@ static bool eif_energy_collector_fetch(char *path, double *energy)
     ogs_assert(path);
     ogs_assert(energy);
 
+    collector_host = eif_energy_collector_host();
+    collector_port = eif_energy_collector_port();
+    timeout_sec = eif_energy_collector_timeout_sec();
+
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
         ogs_warn("Energy Collector socket creation failed");
@@ -235,22 +308,22 @@ static bool eif_energy_collector_fetch(char *path, double *energy)
     }
 
     memset(&timeout, 0, sizeof(timeout));
-    timeout.tv_sec = EIF_ENERGY_COLLECTOR_TIMEOUT_SEC;
+    timeout.tv_sec = timeout_sec;
     setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
     setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(EIF_ENERGY_COLLECTOR_PORT);
-    if (inet_pton(AF_INET, EIF_ENERGY_COLLECTOR_HOST, &addr.sin_addr) != 1) {
-        ogs_warn("Invalid Energy Collector address [%s]", EIF_ENERGY_COLLECTOR_HOST);
+    addr.sin_port = htons(collector_port);
+    if (inet_pton(AF_INET, collector_host, &addr.sin_addr) != 1) {
+        ogs_warn("Invalid Energy Collector address [%s]", collector_host);
         close(fd);
         return false;
     }
 
     if (!eif_energy_collector_connect(fd, &addr, sizeof(addr))) {
         ogs_warn("Cannot connect to Energy Collector [%s:%d]",
-                EIF_ENERGY_COLLECTOR_HOST, EIF_ENERGY_COLLECTOR_PORT);
+                collector_host, collector_port);
         close(fd);
         return false;
     }
@@ -260,7 +333,7 @@ static bool eif_energy_collector_fetch(char *path, double *energy)
             "Host: %s:%d\r\n"
             "Accept: application/json\r\n"
             "Connection: close\r\n\r\n",
-            path, EIF_ENERGY_COLLECTOR_HOST, EIF_ENERGY_COLLECTOR_PORT);
+            path, collector_host, collector_port);
     ogs_assert(request);
 
     request_len = strlen(request);
@@ -570,11 +643,29 @@ bool eif_neif_ee_handle_get_subscriptions(
 }
 static int notif_client_cb(int status, ogs_sbi_response_t *response, void *data)
 {
-    if (status != OGS_SBI_HTTP_STATUS_NO_CONTENT && status != OGS_SBI_HTTP_STATUS_OK) {
-        ogs_warn("Notification failed with status: %d", status);
-    } else {
-        ogs_debug("Notification succeeded with status: %d", status);
+    int http_status = 0;
+
+    if (status != OGS_OK) {
+        ogs_log_message(
+                status == OGS_DONE ? OGS_LOG_DEBUG : OGS_LOG_WARN, 0,
+                "Notification client callback failed [%d]", status);
+        if (response)
+            ogs_sbi_response_free(response);
+        return OGS_ERROR;
     }
+
+    ogs_assert(response);
+    http_status = response->status;
+
+    if (http_status < 200 || http_status >= 300) {
+        ogs_warn("Notification failed with HTTP status: %d",
+                http_status);
+    } else {
+        ogs_debug("Notification succeeded with HTTP status: %d",
+                http_status);
+    }
+
+    ogs_sbi_response_free(response);
     return OGS_OK;
 }
 

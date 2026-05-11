@@ -1,6 +1,3 @@
-# NOTE: DurationSec and EnergyInfo schemas are defined locally (backported from R19)
-# to avoid modifying shared R17 YAML files used by other Open5GS NFs.
-
 openapi: 3.0.0
 
 info:
@@ -459,13 +456,13 @@ components:
             $ref: 'TS29514_Npcf_PolicyAuthorization.yaml#/components/schemas/FlowDescription'
           minItems: 1
         repPeriod:
-          $ref: '#/components/schemas/DurationSec'
+          $ref: 'TS29571_CommonData.yaml#/components/schemas/DurationSec'
         repTimeWin:
           $ref: 'TS29122_CommonData.yaml#/components/schemas/TimeWindow'
         enrgRepThres:
-          $ref: '#/components/schemas/EnergyInfo'
+          $ref: 'TS29122_MonitoringEvent.yaml#/components/schemas/EnergyInfo'
         repPeriodThres:
-          $ref: '#/components/schemas/DurationSec'
+          $ref: 'TS29571_CommonData.yaml#/components/schemas/DurationSec'
         maxReportNbr:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/Uinteger'
       required:
@@ -489,7 +486,7 @@ components:
         timeStamp:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/DateTime'
         energyInfo:
-          $ref: '#/components/schemas/EnergyInfo'
+          $ref: 'TS29122_MonitoringEvent.yaml#/components/schemas/EnergyInfo'
       required:
         - event
         - subscSetId
@@ -504,12 +501,17 @@ components:
 #
 
     EnergyEeEvent:
-      type: string
-      enum:
-        - UE_ENERGY
-        - PDU_SESSION_ENERGY
-        - SERVICE_FLOW_ENERGY
-        - UE_SNSSAI_ENERGY
+      anyOf:
+        - type: string
+          enum:
+          - UE_ENERGY
+          - PDU_SESSION_ENERGY
+          - SERVICE_FLOW_ENERGY
+          - UE_SNSSAI_ENERGY
+        - type: string
+          description: >
+            This string provides forward-compatibility with future extensions to the enumeration
+            and is not used to encode content defined in the present version of this API.
       description: |
         Represents the Energy Exposure event.  
         Possible values are:
@@ -520,23 +522,6 @@ components:
           by an application or service data flow of an application traffic of a UE.
         - UE_SNSSAI_ENERGY: Indicates that the Energy Exposure event is the energy consumed by
           a UE in an S-NSSAI.
-
-    DurationSec:
-      type: integer
-      minimum: 0
-      description: Indicates a time interval in seconds.
-
-    EnergyInfo:
-      type: object
-      description: Represents energy information.
-      properties:
-        energyConsumption:
-          $ref: 'TS29571_CommonData.yaml#/components/schemas/Uinteger'
-        energyReportTimeStamp:
-          $ref: 'TS29571_CommonData.yaml#/components/schemas/DateTime'
-      required:
-        - energyConsumption
-
 
 
 # Data types describing alternative data types or combinations of data types:

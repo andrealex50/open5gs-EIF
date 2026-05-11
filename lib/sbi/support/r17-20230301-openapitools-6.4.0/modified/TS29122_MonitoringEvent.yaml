@@ -768,6 +768,18 @@ components:
           minItems: 1
       required:
         - monitoringEventReports
+    EnergyInfo:
+      description: Represents energy information.
+      type: object
+      properties:
+        energy:
+          type: number
+          format: float
+          minimum: 0
+        energyReportTimeStamp:
+          $ref: 'TS29122_CommonData.yaml#/components/schemas/DateTime'
+      required:
+        - energy
     IdleStatusInfo:
       description: Represents the information relevant to when the UE transitions into idle mode.
       type: object
