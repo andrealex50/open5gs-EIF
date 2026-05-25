@@ -170,6 +170,7 @@ static char *eif_snssai_string(OpenAPI_snssai_t *snssai)
 static char *eif_energy_collector_path(
         OpenAPI_energy_ee_subsc_set_t *subsc_set, char *start, char *end)
 {
+    OpenAPI_lnode_t *node = NULL;
     char *supi = NULL, *event = NULL, *start_param = NULL, *end_param = NULL;
     char *path = NULL, *snssai = NULL;
 
@@ -194,6 +195,13 @@ static char *eif_energy_collector_path(
 
     snssai = eif_snssai_string(subsc_set->snssai);
     eif_append_query_param(&path, "snssai", snssai);
+    eif_append_query_param(&path, "appId", subsc_set->app_id);
+
+    if (subsc_set->flow_descs) {
+        OpenAPI_list_for_each(subsc_set->flow_descs, node) {
+            eif_append_query_param(&path, "flowDescs", node->data);
+        }
+    }
 
     ogs_free(supi);
     ogs_free(event);
