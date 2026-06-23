@@ -29,6 +29,14 @@ If you're contributing through a pull request to Open5GS project on GitHub, plea
 - Open5GS Open Source files are made available under the terms of the GNU Affero General Public License ([GNU AGPL v3.0](https://www.gnu.org/licenses/agpl-3.0.html)).
 - [Commercial licenses](https://open5gs.org/open5gs/support/) are also available from [NewPlane](https://newplane.io/) at [sales@newplane.io](mailto:sales@newplane.io).
 
+## Acknowledgements
+
+EIF-related extensions in this fork were developed at [Instituto de Telecomunicacoes](https://www.it.pt/)
+in the context of the EXIGENCE project, funded by the European Union's Horizon
+Europe research and innovation programme under grant agreement No. 101139120.
+
+Copyright (c) 2026 Instituto de Telecomunicacoes and contributors.
+
 ## Support
 
 Technical support and customized services for Open5GS are provided by [NewPlane](https://newplane.io/) at [support@newplane.io](mailto:support@newplane.io).
