@@ -22,6 +22,8 @@
 
 #include "context.h"
 
+#define EIF_NOTIFY_TICK_SEC 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif

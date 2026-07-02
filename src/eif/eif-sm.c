@@ -27,7 +27,8 @@ void eif_state_initial(ogs_fsm_t *s, eif_event_t *e)
 
     ogs_assert(s);
 
-    ogs_timer_start(eif_self()->notify_timer, ogs_time_from_sec(5));
+    ogs_timer_start(eif_self()->notify_timer,
+            ogs_time_from_sec(EIF_NOTIFY_TICK_SEC));
 
     OGS_FSM_TRAN(s, &eif_state_operational);
 }

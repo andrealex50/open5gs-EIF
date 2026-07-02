@@ -97,6 +97,8 @@ eif_sess_t *eif_sess_add(void)
 
     sess->sub_id = ogs_msprintf("%d", (int)ogs_pool_index(&eif_sess_pool, sess));
     ogs_assert(sess->sub_id);
+    sess->generation = ++self.next_sess_generation;
+    ogs_list_init(&sess->report_state_list);
 
     ogs_list_add(&self.sess_list, sess);
     return sess;
@@ -114,6 +116,7 @@ void eif_sess_remove(eif_sess_t *sess)
     if (sess->energy_ee_subsc) {
         OpenAPI_energy_ee_subsc_free(sess->energy_ee_subsc);
     }
+    eif_report_state_remove_all(sess);
 
     ogs_pool_free(&eif_sess_pool, sess);
 }
@@ -129,6 +132,54 @@ eif_sess_t *eif_sess_find_by_sub_id(char *sub_id)
 {
     ogs_assert(sub_id);
     return ogs_pool_find(&eif_sess_pool, atoll(sub_id));
+}
+
+eif_report_state_t *eif_report_state_add(
+        eif_sess_t *sess, const char *subsc_set_id, ogs_time_t next_report_at)
+{
+    eif_report_state_t *state = NULL;
+
+    ogs_assert(sess);
+    ogs_assert(subsc_set_id);
+
+    state = ogs_calloc(1, sizeof(*state));
+    ogs_assert(state);
+    state->subsc_set_id = ogs_strdup(subsc_set_id);
+    ogs_assert(state->subsc_set_id);
+    state->next_report_at = next_report_at;
+
+    ogs_list_add(&sess->report_state_list, state);
+    return state;
+}
+
+eif_report_state_t *eif_report_state_find(
+        eif_sess_t *sess, const char *subsc_set_id)
+{
+    eif_report_state_t *state = NULL;
+
+    ogs_assert(sess);
+    ogs_assert(subsc_set_id);
+
+    ogs_list_for_each(&sess->report_state_list, state) {
+        if (state->subsc_set_id &&
+                strcmp(state->subsc_set_id, subsc_set_id) == 0)
+            return state;
+    }
+
+    return NULL;
+}
+
+void eif_report_state_remove_all(eif_sess_t *sess)
+{
+    eif_report_state_t *state = NULL, *next = NULL;
+
+    ogs_assert(sess);
+
+    ogs_list_for_each_safe(&sess->report_state_list, next, state) {
+        ogs_list_remove(&sess->report_state_list, state);
+        ogs_free(state->subsc_set_id);
+        ogs_free(state);
+    }
 }
 
 int get_sess_load(void)

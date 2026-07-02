@@ -76,8 +76,6 @@ OpenAPI_energy_info_t *OpenAPI_energy_info_parseFromJSON(cJSON *energy_infoJSON)
     }
 
     energy_consumption = cJSON_GetObjectItemCaseSensitive(energy_infoJSON, "energy");
-    if (!energy_consumption)
-        energy_consumption = cJSON_GetObjectItemCaseSensitive(energy_infoJSON, "energyConsumption");
     if (!energy_consumption) {
         ogs_error("OpenAPI_energy_info_parseFromJSON() failed [energy_consumption]");
         goto end;
