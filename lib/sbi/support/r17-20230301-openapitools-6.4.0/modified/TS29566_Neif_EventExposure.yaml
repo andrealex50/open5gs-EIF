@@ -2,15 +2,15 @@ openapi: 3.0.0
 
 info:
   title: EIF Event Exposure Service
-  version: 1.0.0
+  version: 1.1.0-alpha.2
   description: |
     API for the Neif_EventExposure Service.
-    © 2025, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
+    © 2026, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
     All rights reserved.
 
 externalDocs:
   description: >
-    3GPP TS 29.566 V19.0.0; 5G System; Energy Information Function Services; Stage 3.
+    3GPP TS 29.566 V20.1.0; 5G System; Energy Information Function Services; Stage 3.
   url: http://www.3gpp.org/ftp/Specs/archive/29_series/29.566/
 
 servers:
@@ -465,6 +465,41 @@ components:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/DurationSec'
         maxReportNbr:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/Uinteger'
+        appRankingInd:
+          type: boolean
+          enum:
+            - true
+          description: >
+            Indicates that the energy consumption ranking information is requested.
+            true indicates that the energy consumption ranking information is requested.
+            When present, this attribute shall be set to true. The presence of this attribute set
+            to the value false is forbidden.
+            This attribute may be present only over the N111 interface (i.e., when the NF service
+            consumer is the NEF) and if the event attribute is set to either UE_ENERGY or
+            PDU_SESSION_ENERGY.
+        appIds:
+          type: array
+          items:
+            $ref: 'TS29571_CommonData.yaml#/components/schemas/ApplicationId'
+          minItems: 1
+        enePerBitInd:
+          type: boolean
+          enum:
+            - true
+          description: >
+            Indicates that energy consumption per bit information is requested.
+            true indicates that the energy consumption per bit information is requested.
+            When present, this attribute shall be set to true. The presence of this attribute set
+            to the value false is forbidden.
+        energyCatInd:
+          type: boolean
+          enum:
+            - true
+          description: >
+            Indicates that the energy consumption category information is requested.
+            true indicates that the energy consumption category is requested.
+            When present, this attribute shall be set to true.
+            The presence of this attribute set to the value false is forbidden.
       required:
         - event
         - subscSetId
@@ -487,10 +522,51 @@ components:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/DateTime'
         energyInfo:
           $ref: 'TS29122_MonitoringEvent.yaml#/components/schemas/EnergyInfo'
+        appRankingInfo:
+          $ref: '#/components/schemas/AppRankingInfo'
+        enePerBitInfo:
+          $ref: '#/components/schemas/EnergyPerBitData'
+        energyCat:
+          $ref: '#/components/schemas/EnergyCategory'
       required:
         - event
         - subscSetId
         - timeStamp
+
+    AppRankingInfo:
+      description: >
+        Represents the application ranking related information.
+      type: object
+      properties:
+        rankedAppIds:
+          type: array
+          items:
+            $ref: 'TS29571_CommonData.yaml#/components/schemas/ApplicationId'
+          minItems: 1
+      required:
+        - rankedAppIds
+
+    EnergyPerBitData:
+      description: >
+        Represents the energy consumption per bit information.
+      type: object
+      properties:
+        enePerBit:
+          format: float
+          type: number
+          minimum: 0
+      required:
+        - enePerBit
+
+    EnergyCategory:
+      description: >
+        Represents the energy consumption category information.
+      type: object
+      properties:
+        enCat:
+          type: string
+      required:
+        - enCat
 
 
 # SIMPLE DATA TYPES
@@ -513,7 +589,7 @@ components:
             This string provides forward-compatibility with future extensions to the enumeration
             and is not used to encode content defined in the present version of this API.
       description: |
-        Represents the Energy Exposure event.  
+        Represents the Energy Exposure event.
         Possible values are:
         - UE_ENERGY: Indicates that the Energy Exposure event is the energy consumed by a UE.
         - PDU_SESSION_ENERGY: Indicates that the Energy Exposure event is the energy consumed

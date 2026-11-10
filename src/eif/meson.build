@@ -21,6 +21,7 @@ libeif_sources = files('''
 
     nnrf-handler.c
     neif-handler.c
+    energy-report.c
 
     sbi-path.c
     eif-sm.c

@@ -35,6 +35,7 @@ abts_suite *test_nas_message(abts_suite *suite);
 abts_suite *test_gtp_message(abts_suite *suite);
 abts_suite *test_ngap_message(abts_suite *suite);
 abts_suite *test_sbi_message(abts_suite *suite);
+abts_suite *test_eif_energy(abts_suite *suite);
 abts_suite *test_security(abts_suite *suite);
 abts_suite *test_crash(abts_suite *suite);
 
@@ -47,6 +48,7 @@ const struct testlist {
     {test_gtp_message},
     {test_ngap_message},
     {test_sbi_message},
+    {test_eif_energy},
     {test_security},
     {test_crash},
     {NULL},

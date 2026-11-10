@@ -39,6 +39,13 @@ typedef struct OpenAPI_energy_ee_subsc_set_s {
     int rep_period_thres;
     bool is_max_report_nbr;
     int max_report_nbr;
+    bool is_ene_per_bit_ind;
+    int ene_per_bit_ind;
+    bool is_energy_cat_ind;
+    int energy_cat_ind;
+    bool is_app_ranking_ind;
+    int app_ranking_ind;
+    OpenAPI_list_t *app_ids;
 } OpenAPI_energy_ee_subsc_set_t;
 
 OpenAPI_energy_ee_subsc_set_t *OpenAPI_energy_ee_subsc_set_create(

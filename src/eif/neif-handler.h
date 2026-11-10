@@ -29,7 +29,8 @@ extern "C" {
 #endif
 
 bool eif_neif_ee_handle_subscriptions(
-        eif_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *recvmsg);
+        eif_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *recvmsg,
+        bool from_nef);
 bool eif_neif_ee_handle_get_subscriptions(
         ogs_sbi_stream_t *stream, ogs_sbi_message_t *recvmsg);
 

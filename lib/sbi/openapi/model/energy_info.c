@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "energy_info.h"
+#include <math.h>
 
 OpenAPI_energy_info_t *OpenAPI_energy_info_create(
     double energy_consumption,
@@ -84,7 +85,7 @@ OpenAPI_energy_info_t *OpenAPI_energy_info_parseFromJSON(cJSON *energy_infoJSON)
         ogs_error("OpenAPI_energy_info_parseFromJSON() failed [energy_consumption]");
         goto end;
     }
-    if (energy_consumption->valuedouble < 0) {
+    if (!isfinite(energy_consumption->valuedouble) || energy_consumption->valuedouble < 0) {
         ogs_error("OpenAPI_energy_info_parseFromJSON() failed [energy_consumption]");
         goto end;
     }

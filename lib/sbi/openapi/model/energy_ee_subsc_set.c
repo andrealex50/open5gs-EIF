@@ -23,7 +23,7 @@ OpenAPI_energy_ee_subsc_set_t *OpenAPI_energy_ee_subsc_set_create(
     int max_report_nbr
 )
 {
-    OpenAPI_energy_ee_subsc_set_t *energy_ee_subsc_set_local_var = ogs_malloc(sizeof(OpenAPI_energy_ee_subsc_set_t));
+    OpenAPI_energy_ee_subsc_set_t *energy_ee_subsc_set_local_var = ogs_calloc(1, sizeof(OpenAPI_energy_ee_subsc_set_t));
     ogs_assert(energy_ee_subsc_set_local_var);
 
     energy_ee_subsc_set_local_var->event = event;
@@ -92,6 +92,7 @@ void OpenAPI_energy_ee_subsc_set_free(OpenAPI_energy_ee_subsc_set_t *energy_ee_s
         OpenAPI_energy_info_free(energy_ee_subsc_set->enrg_rep_thres);
         energy_ee_subsc_set->enrg_rep_thres = NULL;
     }
+    OpenAPI_clear_and_free_string_list(energy_ee_subsc_set->app_ids);
     ogs_free(energy_ee_subsc_set);
 }
 
@@ -226,8 +227,32 @@ cJSON *OpenAPI_energy_ee_subsc_set_convertToJSON(OpenAPI_energy_ee_subsc_set_t *
     }
     }
 
+    if (energy_ee_subsc_set->is_ene_per_bit_ind) {
+        if (!energy_ee_subsc_set->ene_per_bit_ind)
+            goto invalid;
+        cJSON_AddBoolToObject(item, "enePerBitInd", true);
+    }
+    if (energy_ee_subsc_set->is_energy_cat_ind) {
+        if (!energy_ee_subsc_set->energy_cat_ind)
+            goto invalid;
+        cJSON_AddBoolToObject(item, "energyCatInd", true);
+    }
+    if (energy_ee_subsc_set->is_app_ranking_ind) {
+        if (!energy_ee_subsc_set->app_ranking_ind)
+            goto invalid;
+        cJSON_AddBoolToObject(item, "appRankingInd", true);
+    }
+    if (energy_ee_subsc_set->app_ids) {
+        cJSON *app_ids = cJSON_AddArrayToObject(item, "appIds");
+        OpenAPI_list_for_each(energy_ee_subsc_set->app_ids, node)
+            cJSON_AddItemToArray(app_ids, cJSON_CreateString(node->data));
+    }
+
 end:
     return item;
+invalid:
+    cJSON_Delete(item);
+    return NULL;
 }
 
 OpenAPI_energy_ee_subsc_set_t *OpenAPI_energy_ee_subsc_set_parseFromJSON(cJSON *energy_ee_subsc_setJSON)
@@ -252,6 +277,11 @@ OpenAPI_energy_ee_subsc_set_t *OpenAPI_energy_ee_subsc_set_parseFromJSON(cJSON *
     OpenAPI_energy_info_t *enrg_rep_thres_local_nonprim = NULL;
     cJSON *rep_period_thres = NULL;
     cJSON *max_report_nbr = NULL;
+    cJSON *app_ids = NULL, *app_id_entry = NULL;
+    OpenAPI_list_t *app_ids_list = NULL;
+    cJSON *ene_per_bit_ind = NULL;
+    cJSON *energy_cat_ind = NULL;
+    cJSON *app_ranking_ind = NULL;
     event = cJSON_GetObjectItemCaseSensitive(energy_ee_subsc_setJSON, "event");
     if (!event) {
         ogs_error("OpenAPI_energy_ee_subsc_set_parseFromJSON() failed [event]");
@@ -377,6 +407,33 @@ OpenAPI_energy_ee_subsc_set_t *OpenAPI_energy_ee_subsc_set_parseFromJSON(cJSON *
     }
     }
 
+    ene_per_bit_ind = cJSON_GetObjectItemCaseSensitive(energy_ee_subsc_setJSON, "enePerBitInd");
+    if (ene_per_bit_ind && !cJSON_IsTrue(ene_per_bit_ind)) {
+        ogs_error("Invalid enePerBitInd: only true is permitted");
+        goto end;
+    }
+    energy_cat_ind = cJSON_GetObjectItemCaseSensitive(energy_ee_subsc_setJSON, "energyCatInd");
+    if (energy_cat_ind && !cJSON_IsTrue(energy_cat_ind)) {
+        ogs_error("Invalid energyCatInd: only true is permitted");
+        goto end;
+    }
+    app_ranking_ind = cJSON_GetObjectItemCaseSensitive(energy_ee_subsc_setJSON, "appRankingInd");
+    if (app_ranking_ind && !cJSON_IsTrue(app_ranking_ind)) {
+        ogs_error("Invalid appRankingInd: only true is permitted");
+        goto end;
+    }
+    app_ids = cJSON_GetObjectItemCaseSensitive(energy_ee_subsc_setJSON, "appIds");
+    if (app_ids) {
+        if (!cJSON_IsArray(app_ids) || cJSON_GetArraySize(app_ids) == 0)
+            goto end;
+        app_ids_list = OpenAPI_list_create();
+        cJSON_ArrayForEach(app_id_entry, app_ids) {
+            if (!cJSON_IsString(app_id_entry) || !app_id_entry->valuestring[0])
+                goto end;
+            OpenAPI_list_add(app_ids_list, ogs_strdup(app_id_entry->valuestring));
+        }
+    }
+
     energy_ee_subsc_set_local_var = OpenAPI_energy_ee_subsc_set_create (
         eventVariable,
         ogs_strdup(subsc_set_id->valuestring),
@@ -396,8 +453,16 @@ OpenAPI_energy_ee_subsc_set_t *OpenAPI_energy_ee_subsc_set_parseFromJSON(cJSON *
         max_report_nbr ? max_report_nbr->valuedouble : 0
     );
 
+    energy_ee_subsc_set_local_var->is_ene_per_bit_ind = ene_per_bit_ind != NULL;
+    energy_ee_subsc_set_local_var->ene_per_bit_ind = ene_per_bit_ind != NULL;
+    energy_ee_subsc_set_local_var->is_energy_cat_ind = energy_cat_ind != NULL;
+    energy_ee_subsc_set_local_var->energy_cat_ind = energy_cat_ind != NULL;
+    energy_ee_subsc_set_local_var->is_app_ranking_ind = app_ranking_ind != NULL;
+    energy_ee_subsc_set_local_var->app_ranking_ind = app_ranking_ind != NULL;
+    energy_ee_subsc_set_local_var->app_ids = app_ids_list;
     return energy_ee_subsc_set_local_var;
 end:
+    OpenAPI_clear_and_free_string_list(app_ids_list);
     if (snssai_local_nonprim) {
         OpenAPI_snssai_free(snssai_local_nonprim);
         snssai_local_nonprim = NULL;

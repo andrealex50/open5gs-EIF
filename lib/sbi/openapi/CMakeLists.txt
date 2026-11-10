@@ -63,6 +63,9 @@ set(SRCS
     model/energy_ee_subsc_patch.c
     model/energy_ee_subsc_set.c
     model/energy_info.c
+    model/app_ranking_info.c
+    model/energy_per_bit_data.c
+    model/energy_category.c
     model/invalid_param.c
     model/nf_type.c
     model/plmn_id.c
@@ -92,6 +95,9 @@ set(HDRS
     model/energy_ee_subsc_patch.h
     model/energy_ee_subsc_set.h
     model/energy_info.h
+    model/app_ranking_info.h
+    model/energy_per_bit_data.h
+    model/energy_category.h
     model/invalid_param.h
     model/nf_type.h
     model/plmn_id.h

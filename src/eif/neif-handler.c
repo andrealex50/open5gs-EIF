@@ -19,6 +19,7 @@
 
 #include "sbi-path.h"
 #include "neif-handler.h"
+#include "energy-report.h"
 
 #include <arpa/inet.h>
 #include <ctype.h>
@@ -151,7 +152,7 @@ static bool eif_notif_uri_is_valid(const char *uri)
 }
 
 static bool eif_validate_subscription(
-        OpenAPI_energy_ee_subsc_t *subscription, char **error)
+        OpenAPI_energy_ee_subsc_t *subscription, bool from_nef, char **error)
 {
     OpenAPI_lnode_t *node = NULL;
     ogs_time_t now = ogs_time_now();
@@ -315,7 +316,7 @@ static bool eif_validate_subscription(
         }
     }
 
-    return true;
+    return eif_energy_negotiate_features(subscription, from_nef, error);
 }
 
 static void eif_reset_report_states(eif_sess_t *sess)
@@ -457,6 +458,14 @@ static char *eif_energy_collector_path(
     snssai = eif_snssai_string(subsc_set->snssai);
     eif_append_query_param(&path, "snssai", snssai);
     eif_append_query_param(&path, "appId", subsc_set->app_id);
+    if (subsc_set->is_ene_per_bit_ind)
+        eif_append_query_param(&path, "enePerBitInd", "true");
+    if (subsc_set->is_energy_cat_ind)
+        eif_append_query_param(&path, "energyCatInd", "true");
+    if (subsc_set->is_app_ranking_ind)
+        eif_append_query_param(&path, "appRankingInd", "true");
+    OpenAPI_list_for_each(subsc_set->app_ids, node)
+        eif_append_query_param(&path, "appIds", node->data);
 
     if (subsc_set->flow_descs) {
         OpenAPI_list_for_each(subsc_set->flow_descs, node) {
@@ -472,33 +481,6 @@ static char *eif_energy_collector_path(
         ogs_free(snssai);
 
     return path;
-}
-
-static bool eif_energy_collector_parse_body(const char *body, double *energy)
-{
-    cJSON *root = NULL;
-    cJSON *energy_info = NULL;
-    cJSON *energy_item = NULL;
-
-    ogs_assert(body);
-    ogs_assert(energy);
-
-    root = cJSON_Parse(body);
-    if (!root)
-        return false;
-
-    energy_info = cJSON_GetObjectItemCaseSensitive(root, "energyInfo");
-    if (energy_info)
-        energy_item = cJSON_GetObjectItemCaseSensitive(energy_info, "energy");
-
-    if (!cJSON_IsNumber(energy_item) || energy_item->valuedouble < 0) {
-        cJSON_Delete(root);
-        return false;
-    }
-
-    *energy = energy_item->valuedouble;
-    cJSON_Delete(root);
-    return true;
 }
 
 static bool eif_energy_collector_connect(
@@ -550,7 +532,8 @@ cleanup:
     return false;
 }
 
-static bool eif_energy_collector_fetch(char *path, double *energy)
+static OpenAPI_energy_ee_report_t *eif_energy_collector_fetch(
+        char *path, OpenAPI_energy_ee_subsc_set_t *set, char *end)
 {
     int fd = -1, status = 0;
     ssize_t sent = 0, n = 0;
@@ -564,7 +547,7 @@ static bool eif_energy_collector_fetch(char *path, double *energy)
     char *body = NULL;
 
     ogs_assert(path);
-    ogs_assert(energy);
+    ogs_assert(set);
 
     collector_host = eif_energy_collector_host();
     collector_port = eif_energy_collector_port();
@@ -573,7 +556,7 @@ static bool eif_energy_collector_fetch(char *path, double *energy)
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
         ogs_warn("Energy Collector socket creation failed");
-        return false;
+        return NULL;
     }
 
     memset(&timeout, 0, sizeof(timeout));
@@ -587,14 +570,14 @@ static bool eif_energy_collector_fetch(char *path, double *energy)
     if (inet_pton(AF_INET, collector_host, &addr.sin_addr) != 1) {
         ogs_warn("Invalid Energy Collector address [%s]", collector_host);
         close(fd);
-        return false;
+        return NULL;
     }
 
     if (!eif_energy_collector_connect(fd, &addr, sizeof(addr))) {
         ogs_warn("Cannot connect to Energy Collector [%s:%d]",
                 collector_host, collector_port);
         close(fd);
-        return false;
+        return NULL;
     }
 
     request = ogs_msprintf(
@@ -612,7 +595,7 @@ static bool eif_energy_collector_fetch(char *path, double *energy)
             ogs_warn("Energy Collector request send failed");
             ogs_free(request);
             close(fd);
-            return false;
+            return NULL;
         }
         sent += n;
     }
@@ -629,59 +612,42 @@ static bool eif_energy_collector_fetch(char *path, double *energy)
 
     if (total == 0) {
         ogs_warn("Energy Collector returned an empty response");
-        return false;
+        return NULL;
     }
 
     if (sscanf(response, "HTTP/%*s %d", &status) != 1 ||
             status < OGS_SBI_HTTP_STATUS_OK ||
             status >= OGS_SBI_HTTP_STATUS_BAD_REQUEST) {
         ogs_warn("Energy Collector failed with HTTP status [%d]", status);
-        return false;
+        return NULL;
     }
 
     body = strstr(response, "\r\n\r\n");
     if (!body) {
         ogs_warn("Energy Collector response has no HTTP body");
-        return false;
+        return NULL;
     }
     body += 4;
 
-    if (!eif_energy_collector_parse_body(body, energy)) {
-        ogs_warn("Energy Collector response has no energyInfo.energy");
-        return false;
-    }
-
-    return true;
+    return eif_energy_report_parse(body, set, end);
 }
 
-static bool eif_energy_from_collector(
-        OpenAPI_energy_ee_subsc_set_t *subsc_set, char *start, char *end,
-        double *energy)
+static OpenAPI_energy_ee_report_t *eif_energy_from_collector(
+        OpenAPI_energy_ee_subsc_set_t *set, char *start, char *end)
 {
-    char *path = NULL;
+    char *path = eif_energy_collector_path(set, start, end);
+    OpenAPI_energy_ee_report_t *report = NULL;
 
-    ogs_assert(energy);
-
-    path = eif_energy_collector_path(subsc_set, start, end);
-    if (!path) {
-        ogs_warn("Energy Collector query skipped: missing target identifier or event");
-        return false;
-    }
-
-    if (eif_energy_collector_fetch(path, energy)) {
-        ogs_debug("Energy Collector returned energy [%f] for target [%s]",
-                *energy, subsc_set->supi ?
-                    subsc_set->supi : subsc_set->gpsi);
-        ogs_free(path);
-        return true;
-    }
-
+    if (!path)
+        return NULL;
+    report = eif_energy_collector_fetch(path, set, end);
     ogs_free(path);
-    return false;
+    return report;
 }
 
 bool eif_neif_ee_handle_subscriptions(
-        eif_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *recvmsg)
+        eif_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *recvmsg,
+        bool from_nef)
 {
     int status = 0;
     char *strerror = NULL;
@@ -723,7 +689,7 @@ bool eif_neif_ee_handle_subscriptions(
                 status = OGS_SBI_HTTP_STATUS_BAD_REQUEST;
                 goto cleanup;
             }
-            if (!eif_validate_subscription(candidate, &strerror)) {
+            if (!eif_validate_subscription(candidate, from_nef, &strerror)) {
                 status = OGS_SBI_HTTP_STATUS_BAD_REQUEST;
                 goto cleanup;
             }
@@ -782,7 +748,7 @@ bool eif_neif_ee_handle_subscriptions(
                 status = OGS_SBI_HTTP_STATUS_BAD_REQUEST;
                 goto cleanup;
             }
-            if (!eif_validate_subscription(candidate, &strerror)) {
+            if (!eif_validate_subscription(candidate, from_nef, &strerror)) {
                 cJSON_Delete(orig_json);
                 cJSON_Delete(patch_json);
                 status = OGS_SBI_HTTP_STATUS_BAD_REQUEST;
@@ -829,7 +795,7 @@ bool eif_neif_ee_handle_subscriptions(
                 status = OGS_SBI_HTTP_STATUS_BAD_REQUEST;
                 goto cleanup;
             }
-            if (!eif_validate_subscription(candidate, &strerror)) {
+            if (!eif_validate_subscription(candidate, from_nef, &strerror)) {
                 status = OGS_SBI_HTTP_STATUS_BAD_REQUEST;
                 goto cleanup;
             }
@@ -1008,7 +974,6 @@ void eif_timer_notify_handler(eif_event_t *e)
                 int report_period = eif_report_period(subsc_set);
                 char *start = NULL, *end = NULL;
                 OpenAPI_energy_ee_report_t *report = NULL;
-                double collector_energy = 0;
 
                 if (!state) {
                     state = eif_report_state_add(
@@ -1036,9 +1001,9 @@ void eif_timer_notify_handler(eif_event_t *e)
                         ogs_time_from_sec(report_period);
                 }
 
-                if (!eif_energy_from_collector(
-                            subsc_set, start, end, &collector_energy)) {
-                    ogs_warn("EIF notify report skipped: no valid energyInfo.energy for notifUri [%s] subId [%s] event [%s] supi [%s]",
+                report = eif_energy_from_collector(subsc_set, start, end);
+                if (!report) {
+                    ogs_warn("EIF notify report skipped: invalid or missing requested energy data for notifUri [%s] subId [%s] event [%s] supi [%s]",
                             sess->energy_ee_subsc->notif_uri,
                             sess->sub_id,
                             OpenAPI_energy_ee_event_ToString(subsc_set->event),
@@ -1049,25 +1014,16 @@ void eif_timer_notify_handler(eif_event_t *e)
                 }
 
                 if (subsc_set->enrg_rep_thres &&
-                        collector_energy <
+                        report->energy_info->energy_consumption <
                             subsc_set->enrg_rep_thres->energy_consumption) {
                     ogs_debug("EIF energy threshold not reached: subId [%s] set [%s] energy [%f] threshold [%f]",
-                            sess->sub_id, map->key, collector_energy,
+                            sess->sub_id, map->key, report->energy_info->energy_consumption,
                             subsc_set->enrg_rep_thres->energy_consumption);
+                    OpenAPI_energy_ee_report_free(report);
                     ogs_free(start);
                     ogs_free(end);
                     continue;
                 }
-
-                report = ogs_calloc(1, sizeof(*report));
-                ogs_assert(report);
-                report->subsc_set_id = ogs_strdup(map->key);
-                report->event = subsc_set->event;
-                report->time_stamp = ogs_strdup(end);
-                report->energy_info = ogs_calloc(1, sizeof(*report->energy_info));
-                ogs_assert(report->energy_info);
-                report->energy_info->energy_consumption = collector_energy;
-                report->energy_info->energy_report_time_stamp = ogs_strdup(end);
 
                 state->reports_sent++;
                 if (subsc_set->rep_time_win)
@@ -1090,7 +1046,7 @@ void eif_timer_notify_handler(eif_event_t *e)
 
         if (!list || list->count == 0) {
             if (report_due) {
-                ogs_warn("EIF notify skipped: no reports with valid energyInfo.energy for notifUri [%s] subId [%s]",
+                ogs_warn("EIF notify skipped: no reports with valid requested energy data for notifUri [%s] subId [%s]",
                         sess->energy_ee_subsc->notif_uri, sess->sub_id);
             }
         } else if ((request = ogs_sbi_build_request(&message))) {

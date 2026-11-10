@@ -59,7 +59,7 @@ typedef struct eif_sess_s {
     char *supi;
     uint64_t generation;
 
-    OpenAPI_energy_ee_subsc_t *energy_ee_subsc; /* Release 19  structure */
+    OpenAPI_energy_ee_subsc_t *energy_ee_subsc; /* TS 29.566 v20.1.0, including Release 19 requests */
     ogs_list_t report_state_list;
     bool notification_pending;
 } eif_sess_t;

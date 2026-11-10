@@ -18,6 +18,7 @@
  */
 
 #include "sbi-path.h"
+#include "energy-report.h"
 
 int eif_sbi_open(void)
 {
@@ -34,6 +35,7 @@ int eif_sbi_open(void)
     ogs_sbi_nf_instance_add_allowed_nf_type(nf_instance, OpenAPI_nf_type_SCP);
     ogs_sbi_nf_instance_add_allowed_nf_type(nf_instance, OpenAPI_nf_type_PCF);
     ogs_sbi_nf_instance_add_allowed_nf_type(nf_instance, OpenAPI_nf_type_AF);
+    ogs_sbi_nf_instance_add_allowed_nf_type(nf_instance, OpenAPI_nf_type_NEF);
 
     /* Build NF service information. It will be transmitted to NRF. */
     if (ogs_sbi_nf_service_is_available(OGS_SBI_SERVICE_NAME_NEIF_EVENTEXPOSURE)) {
@@ -41,9 +43,10 @@ int eif_sbi_open(void)
                     nf_instance, OGS_SBI_SERVICE_NAME_NEIF_EVENTEXPOSURE);
         ogs_assert(service);
         ogs_sbi_nf_service_add_version(
-                    service, OGS_SBI_API_V1, OGS_SBI_API_V1_0_0, NULL);
+                    service, OGS_SBI_API_V1, EIF_NEIF_API_VERSION, NULL);
         ogs_sbi_nf_service_add_allowed_nf_type(service, OpenAPI_nf_type_PCF);
         ogs_sbi_nf_service_add_allowed_nf_type(service, OpenAPI_nf_type_AF);
+        ogs_sbi_nf_service_add_allowed_nf_type(service, OpenAPI_nf_type_NEF);
     }
 
     /* Initialize NRF NF Instance */

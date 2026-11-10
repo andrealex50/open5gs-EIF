@@ -40,6 +40,22 @@ void eif_state_final(ogs_fsm_t *s, eif_event_t *e)
     ogs_assert(s);
 }
 
+static bool eif_request_is_nef(ogs_sbi_request_t *request)
+{
+    ogs_hash_index_t *header = NULL;
+
+    /* TS 29.500 identifies the originating NF in User-Agent, including via SCP. */
+    for (header = ogs_hash_first(request->http.headers);
+            header; header = ogs_hash_next(header)) {
+        const char *name = ogs_hash_this_key(header);
+        const char *value = ogs_hash_this_val(header);
+
+        if (name && value && !strcasecmp(name, OGS_SBI_USER_AGENT))
+            return !strcmp(value, "NEF") || !strncmp(value, "NEF-", 4);
+    }
+    return false;
+}
+
 void eif_state_operational(ogs_fsm_t *s, eif_event_t *e)
 {
     int rv;
@@ -147,7 +163,8 @@ void eif_state_operational(ogs_fsm_t *s, eif_event_t *e)
                                 &message, "Not found", message.h.uri, NULL));
                         break;
                     }
-                    eif_neif_ee_handle_subscriptions(sess, stream, &message);
+                    eif_neif_ee_handle_subscriptions(
+                            sess, stream, &message, eif_request_is_nef(request));
                 } else {
                     /* it doesn't have subId: /subscriptions */
                     SWITCH(message.h.method)
@@ -158,7 +175,9 @@ void eif_state_operational(ogs_fsm_t *s, eif_event_t *e)
                         if (message.EnergyEeSubsc) {
                             sess = eif_sess_add();
                             ogs_assert(sess);
-                            eif_neif_ee_handle_subscriptions(sess, stream, &message);
+                            eif_neif_ee_handle_subscriptions(
+                                    sess, stream, &message,
+                                    eif_request_is_nef(request));
                         } else {
                             ogs_error("No EnergyEeSubsc [%s:%s]", message.h.method, message.h.uri);
                             ogs_assert(true ==

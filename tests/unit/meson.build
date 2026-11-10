@@ -23,6 +23,8 @@ testunit_unit_sources = files('''
     gtp-message-test.c
     ngap-message-test.c
     sbi-message-test.c
+    eif-energy-test.c
+    ../../src/eif/energy-report.c
     security-test.c
     crash-test.c
 '''.split())

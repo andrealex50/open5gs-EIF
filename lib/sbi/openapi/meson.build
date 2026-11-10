@@ -1374,6 +1374,9 @@ libsbi_openapi_sources = files('''
     model/energy_ee_subsc_patch.c
     model/energy_ee_subsc_set.c
     model/energy_info.c
+    model/app_ranking_info.c
+    model/energy_per_bit_data.c
+    model/energy_category.c
 '''.split())
 
 libsbi_openapi_inc = include_directories('.')

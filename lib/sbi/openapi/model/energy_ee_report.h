@@ -14,6 +14,9 @@
 #include "../include/binary.h"
 #include "energy_ee_event.h"
 #include "energy_info.h"
+#include "app_ranking_info.h"
+#include "energy_per_bit_data.h"
+#include "energy_category.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +28,9 @@ typedef struct OpenAPI_energy_ee_report_s {
     char *subsc_set_id;
     char *time_stamp;
     struct OpenAPI_energy_info_s *energy_info;
+    OpenAPI_app_ranking_info_t *app_ranking_info;
+    OpenAPI_energy_per_bit_data_t *ene_per_bit_info;
+    OpenAPI_energy_category_t *energy_cat;
 } OpenAPI_energy_ee_report_t;
 
 OpenAPI_energy_ee_report_t *OpenAPI_energy_ee_report_create(

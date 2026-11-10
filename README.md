@@ -40,3 +40,47 @@ Copyright (c) 2026 Instituto de Telecomunicacoes and contributors.
 ## Support
 
 Technical support and customized services for Open5GS are provided by [NewPlane](https://newplane.io/) at [support@newplane.io](mailto:support@newplane.io).
+
+## EIF Release 20 energy exposure
+
+The EIF implements the TS 29.566 v20.1.0 OpenAPI data model
+(`1.1.0-alpha.2`) at `/neif-ee/v1`. Release 19 subscription payloads
+remain supported. Clients request the optional `Energy_2` feature using
+`"suppFeat": "1"`. The subscription response contains the negotiated
+feature bitmap.
+
+The subscription sets accept `enePerBitInd`, `energyCatInd` and
+`appRankingInd`, each set to `true` when present. Ranking applies to
+UE or PDU session energy subscriptions received from a NEF over N111.
+Optional `appIds` limits the applications included in that ranking.
+
+The existing Energy Collector receives these indicators as query parameters
+and each requested application as a repeated `appIds` parameter. It must
+return the requested companion objects alongside `energyInfo`:
+
+```json
+{
+  "energyInfo": {"energy": 12},
+  "enePerBitInfo": {"enePerBit": 0.002},
+  "energyCat": {"enCat": "low"},
+  "appRankingInfo": {"rankedAppIds": ["video", "audio"]}
+}
+```
+
+Energy is expressed in joules. The collector supplies energy per bit, the
+operator-defined category, and application identifiers already ranked in
+descending order of contribution. The EIF emits the companion objects
+requested by the subscription and skips a report if requested data is
+missing or invalid. Existing collectors returning only `energyInfo` serve
+Release 19 requests.
+
+Originating NF type is read from the TS 29.500 `User-Agent` header
+(`NEF` or `NEF-...` for ranking), following the existing SCP convention.
+Deploy this endpoint behind the operator's SBI authentication and access
+controls so the originating NF identity is trusted.
+
+The regression suite is registered in the normal unit-test target:
+
+```sh
+meson test -C build unit --print-errorlogs
+```
