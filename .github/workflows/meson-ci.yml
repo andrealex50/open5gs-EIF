@@ -49,7 +49,9 @@ jobs:
 #
   ubuntu-latest:
     name: Build and Test on Ubuntu Latest
-    runs-on: ubuntu-latest
+    # ubuntu-latest is now 26.04, whose libmongoc-dev ships mongo-c-driver 2.x
+    # without the libmongoc-1.0 pkg-config module that lib/dbi/meson.build needs.
+    runs-on: ubuntu-24.04
     services:
       mongodb:
         image: mongo
