@@ -1063,11 +1063,15 @@ void eif_timer_notify_handler(eif_event_t *e)
                 ogs_assert(report);
                 report->subsc_set_id = ogs_strdup(map->key);
                 report->event = subsc_set->event;
-                report->time_stamp = ogs_strdup(end);
+                /* TS 29.566 clause 6.1.6.2.6: timeStamp is the time at which
+                 * the report is triggered, not the end of the collection
+                 * period. TS 29.122 V19.6.0 EnergyInfo carries only "energy",
+                 * so energyReportTimeStamp is left unset. */
+                report->time_stamp = ogs_sbi_gmtime_string(now);
+                ogs_assert(report->time_stamp);
                 report->energy_info = ogs_calloc(1, sizeof(*report->energy_info));
                 ogs_assert(report->energy_info);
                 report->energy_info->energy_consumption = collector_energy;
-                report->energy_info->energy_report_time_stamp = ogs_strdup(end);
 
                 state->reports_sent++;
                 if (subsc_set->rep_time_win)
